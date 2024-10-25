@@ -542,7 +542,13 @@ public class PowerCommand {
 
 		public static int execute(CommandContext<ServerCommandSource> context, int indent) {
 
-			Power power = PowerArgumentType.getPower(context, "power");
+			Power power;
+			try {
+				power = PowerArgumentType.getPower(context, "power");
+				} catch (CommandSyntaxException e) {
+					source.sendError(Text.translatable("commands.apoli.dump.fail"));
+					return 0;
+				}
 			ServerCommandSource commandSource = context.getSource();
 
 			return Power.DATA_TYPE.write(commandSource.getRegistryManager().getOps(JsonOps.INSTANCE), power)
