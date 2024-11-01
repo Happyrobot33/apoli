@@ -471,7 +471,13 @@ public class PowerCommand {
 	private static int dumpPowerJson(CommandContext<ServerCommandSource> context, boolean indentSpecified) {
 
 		ServerCommandSource source = context.getSource();
-		Power power = PowerArgumentType.getPower(context, "power");
+		Power power;
+		try {
+		power = PowerArgumentType.getPower(context, "power");
+		} catch (CommandSyntaxException e) {
+			source.sendError(Text.translatable("commands.apoli.dump.fail"));
+			return 0;
+		}
 
 		String indent = Strings.repeat(' ', indentSpecified ? IntegerArgumentType.getInteger(context, "indent") : 4);
 		source.sendFeedback(() -> new JsonTextFormatter(indent).apply(power.toJson()), false);
