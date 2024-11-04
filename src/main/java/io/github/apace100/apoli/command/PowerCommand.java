@@ -11,6 +11,8 @@ import io.github.apace100.apoli.command.argument.PowerHolderArgumentType;
 import io.github.apace100.apoli.component.PowerHolderComponent;
 import io.github.apace100.apoli.power.Power;
 import io.github.apace100.apoli.util.JsonTextFormatter;
+import io.github.apace100.apoli.util.MiscUtil;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import joptsimple.internal.Strings;
 import net.minecraft.command.argument.IdentifierArgumentType;
 import net.minecraft.entity.Entity;
@@ -25,6 +27,9 @@ import net.minecraft.util.Identifier;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static net.minecraft.server.command.CommandManager.argument;
 import static net.minecraft.server.command.CommandManager.literal;
@@ -357,17 +362,17 @@ public class PowerCommand {
 	private static int removePower(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
 
 		ServerCommandSource source = context.getSource();
+		Power power = PowerArgumentType.getPower(context, "power");
 
 		List<LivingEntity> targets = PowerHolderArgumentType.getHolders(context, "targets");
 		List<LivingEntity> processedTargets = new LinkedList<>();
 
-		Power power = PowerArgumentType.getPower(context, "power");
 		for (LivingEntity target : targets) {
+			Map<Identifier, Collection<Power>> powers = PowerHolderComponent.KEY.get(target).getSources(power)
+				.stream()
+				.collect(Collectors.toMap(Function.identity(), id -> ObjectOpenHashSet.of(power), MiscUtil.mergeCollections()));
 
-			List<Identifier> powerSources = PowerHolderComponent.KEY.get(target).getSources(power);
-			int revokedPowers = PowerHolderComponent.revokeAllPowersFromAllSources(target, powerSources, true);
-
-			if (revokedPowers > 0) {
+			if (PowerHolderComponent.revokePowers(target, powers, true)) {
 				processedTargets.add(target);
 			}
 
